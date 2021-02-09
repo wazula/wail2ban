@@ -34,13 +34,14 @@ $DebugPreference = "continue"
 $CHECK_WINDOW = 120  # We check the most recent X seconds of log.         Default: 120
 $CHECK_COUNT  = 5    # Ban after this many failures in search period.     Default: 5
 $MAX_BANDURATION = 7776000 # 3 Months in seconds
+$oldLog = -5 # Delete 5 Day old LogFile
 	
 ################################################################################
 #  Files
 
 $wail2banInstall = ""+(Get-Location)+"\"
 $wail2banScript  = $wail2banInstall+"wail2ban.ps1"
-$logFile         = $wail2banInstall+"wail2ban_log.log"
+$logFile         = $wail2banInstall+"wail2ban_log"
 $ConfigFile      = $wail2banInstall+"wail2ban_config.ini"
 $BannedIPLog	 = $wail2banInstall+"bannedIPLog.ini"
 
@@ -123,9 +124,10 @@ function debug       ($text) { log "D" $text }
 function actioned    ($text) { log "A" $text } 
 
 #Log things to file and debug
-function log ($type, $text) { 
+function log ($type, $text) {
+        Get-ChildItem -Path "$($wail2banInstall)\*" -Include "*.log" | ?{($_.LastWriteTime) -lt (Get-Date).AddDays($oldLog)} | Remove-Item -Force
 	$output = ""+(get-date -format u).replace("Z","")+" $tag $text"  
-	if ($type -eq "A") { $output | out-file $logfile -append}
+	if ($type -eq "A") { $output | out-file $logfile"_$(Get-Date -Format ddMMyy).log" -append}
 	switch ($type) { 
 		"D" { write-debug $output} 
 		"W" { write-warning "WARNING: $output"} 
