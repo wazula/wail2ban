@@ -2,6 +2,7 @@
 $wail2banInstall = ""+(Get-Location)+"\"
 $BannedIPLog   = $wail2banInstall+"bannedIPLog.ini"
 $logFile         = $wail2banInstall+"wail2ban_log.log"
+#$logFile         = Get-ChildItem -Path $wail2banInstall"\*" -Include "*.log"
 
 $HTMLFile = $wail2banInstall+"public_html/index.html"
 function html ($a) { $a | out-file $HTMLFile -append }
@@ -13,10 +14,12 @@ $BannedIPs = @{}; if (Test-Path $BannedIPLog) { get-content $BannedIPLog | %{
 
 $BannedIPSum = 0; $BannedIPs.keys  | %{$BannedIPSum += [int]($BannedIPs.Get_Item($_))}
 $TotalBans   = 0; $BannedIPs.GetEnumerator() | % { $TotalBans += [math]::pow(5,$_.value) }
-$MaxBanCount = ($BannedIPs.GetEnumerator() | sort-object value -descending | select-object -first 1).Value
+$MaxBanCount = ($BannedIPs.GetEnumerator() | sort-object {[int]$_.Value} -descending | select-object -first 1).Value
 
 gc $logFile | %{	if($_ -match "Firewall ban for "){$BanCount--} 
 	                if($_ -match "Firewall rule added for "){$BanCount++} }
+			
+#$BanCount = ((Get-NetFirewallRule -Enabled True -Direction Inbound -Action Block) | ?{$_.DisplayName -match "wail2ban"}).count
 
 $SinceLine = gc $logfile | select-object -first 1
 gc $logfile | %{ if ($_ -match "jailbreak") {$SinceLine = $_ } }
